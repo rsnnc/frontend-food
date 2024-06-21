@@ -149,4 +149,51 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.addEventListener('scroll', openModalByScroll);
+
+    // cards specifications by using classes
+
+    class cardList {
+        constructor(src, alt, title, descr, price, parent, ...classes) {
+            this.src = src;
+            this.alt = alt;
+            this.title = title;
+            this.descr = descr;
+            this.classes = classes;
+            this.parent = document.querySelector(parent);
+            this.price = price;
+            this.transfer = 40;
+            this.changeToUAH();
+        }
+        
+        changeToUAH() {
+            this.price *= this.transfer;
+        }
+
+        render() {
+            const divElement = document.createElement('div');
+            if (this.classes.length === 0) {
+                divElement.classList.add('menu__item');
+            } else {
+                this.classes.forEach(className => divElement.classList.add(className));
+            }
+            console.log(this.classes);
+
+            divElement.innerHTML = `
+                    <img src=${this.src} alt=${this.alt}>
+                    <h3 class="menu__item-subtitle">${this.title}</h3>
+                    <div class="menu__item-descr">${this.descr}</div>
+                    <div class="menu__item-divider"></div>
+                    <div class="menu__item-price">
+                        <div class="menu__item-cost">Цена:</div>
+                        <div class="menu__item-total"><span>${this.price}</span> грн/день</div>
+                    </div>
+            `
+            this.parent.append(divElement);
+        }   
+    }
+
+    new cardList('img/tabs/post.jpg', 'post', 'Меню "Постное"', 'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков. ', 10, '.menu .container', 'menu__item', 'big').render();
+    new cardList('img/tabs/post.jpg', 'post', 'Меню "Постное"', 'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков. ', 10, '.menu .container', 'menu__item').render();
+    new cardList('img/tabs/post.jpg', 'post', 'Меню "Постное"', 'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков. ', 10, '.menu .container', 'menu__item').render();
+
 })
