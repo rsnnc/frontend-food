@@ -3,3 +3,21 @@
 /* body {
     overflow: hidden;
 } */
+
+.statusMessage {
+    animation: blind 3s ease-in-out infinite;
+    font-size: 30px;
+    font-weight: 700;
+}
+
+@keyframes blind {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}

@@ -110,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
     //  MODAL MENU
     let flag = false;
     const openModalBtns = document.querySelectorAll('[data-modal]'),
-          closeModalBtns = document.querySelectorAll('[data-close]'),
           modalMenu = document.querySelector('.modal');
 
     openModalBtns.forEach(item => {
@@ -130,19 +129,15 @@ document.addEventListener('DOMContentLoaded', () => {
         flag = false;
     }
 
-    closeModalBtns.forEach(item => {
-        item.addEventListener('click', closeModal);
-    })
-
     modalMenu.addEventListener('click', (e) => {
-        if (e.target === modalMenu) closeModal(); 
+        if (e.target === modalMenu || e.target.getAttribute('data-close') == '') closeModal(); 
     })
     
     document.addEventListener('keydown', (e) => {
         if (e.code === 'Escape' && flag) closeModal();
     })
 
-    const timeForModal = setTimeout(openModal, 5000);
+    const timeForModal = setTimeout(openModal, 50000);
 
     function openModalByScroll() {
         if (window.scrollY + document.documentElement.clientHeight == document.documentElement.scrollHeight) {openModal(); window.removeEventListener('scroll', openModalByScroll);};
@@ -176,7 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 this.classes.forEach(className => divElement.classList.add(className));
             }
-            console.log(this.classes);
 
             divElement.innerHTML = `
                     <img src=${this.src} alt=${this.alt}>
@@ -196,4 +190,78 @@ document.addEventListener('DOMContentLoaded', () => {
     new cardList('img/tabs/post.jpg', 'post', 'Меню "Постное"', 'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков. ', 10, '.menu .container', 'menu__item').render();
     new cardList('img/tabs/post.jpg', 'post', 'Меню "Постное"', 'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков. ', 10, '.menu .container', 'menu__item').render();
 
+    // forms
+
+    const forms = document.querySelectorAll('form');
+    const message = {
+        loading: 'img/form/spinner.svg',
+        success: 'Успех!',
+        failure: 'Что то пошло не так...'
+    }
+
+    forms.forEach(item => {
+        postData(item);
+    })
+
+    function postData(form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+        
+            const request = new XMLHttpRequest();
+            const statusMessage = document.createElement('img');
+            statusMessage.src = message.loading;
+            statusMessage.style.cssText = `
+                display: block;
+                margin: 0 auto;
+            `
+            form.insertAdjacentElement('afterend', statusMessage);
+            
+            request.open('POST', 'server.php');
+            request.setRequestHeader('Content-type', 'application/json');
+            const formData = new FormData(form);
+
+            const object = {};
+            formData.forEach(function(value, key) {
+                object[key] = value;
+            })
+
+            const jsonCur = JSON.stringify(object);
+            request.send(jsonCur);
+
+
+            request.addEventListener('load', () => {
+                if (request.status == 200) {
+                    console.log(request.response)
+                    showThanksModal(message.success);
+                    form.reset();
+                    statusMessage.remove();
+                } else {
+                    showThanksModal(message.failure);
+                }
+            })
+        })
+    }
+    function showThanksModal(message) {
+        closeModal();
+
+        // if (thanksModal) thanksModal.remove();
+        const thanksModal = document.createElement('div');
+        const previousModal = document.querySelector('.modal__dialog');
+        previousModal.style.display = 'none';
+        thanksModal.classList.add('modal__dialog');
+        thanksModal.innerHTML = `
+            <div class="modal__content">
+                <div data-close class="modal__close">&times;</div>
+                <div class="modal__title">${message}</div>
+            </div>
+        `
+        document.querySelector('.modal').append(thanksModal);
+        openModal();
+
+        setTimeout(() => {
+            closeModal();
+            thanksModal.remove();
+            previousModal.style.display = 'block';
+        }, 5000);
+    }
 })
