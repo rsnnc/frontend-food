@@ -207,7 +207,6 @@ document.addEventListener('DOMContentLoaded', () => {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
         
-            const request = new XMLHttpRequest();
             const statusMessage = document.createElement('img');
             statusMessage.src = message.loading;
             statusMessage.style.cssText = `
@@ -215,36 +214,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 margin: 0 auto;
             `
             form.insertAdjacentElement('afterend', statusMessage);
-            
-            request.open('POST', 'server.php');
-            request.setRequestHeader('Content-type', 'application/json');
-            const formData = new FormData(form);
 
+            const formData = new FormData(form);
             const object = {};
             formData.forEach(function(value, key) {
                 object[key] = value;
             })
 
-            const jsonCur = JSON.stringify(object);
-            request.send(jsonCur);
-
-
-            request.addEventListener('load', () => {
-                if (request.status == 200) {
-                    console.log(request.response)
-                    showThanksModal(message.success);
-                    form.reset();
-                    statusMessage.remove();
-                } else {
-                    showThanksModal(message.failure);
+            fetch('server1.php', {
+                method: 'POST',
+                body: JSON.stringify(object),
+                headers: {
+                    'Content-type': 'application/json'
                 }
+            }).then(data => data.text())
+            .then(data => {
+                console.log(data);
+                showThanksModal(message.success);
+                statusMessage.remove();
+            }).catch(() => {
+                showThanksModal(message.failure);
+            }).finally(() => {
+                form.reset();
             })
         })
     }
     function showThanksModal(message) {
         closeModal();
 
-        // if (thanksModal) thanksModal.remove();
         const thanksModal = document.createElement('div');
         const previousModal = document.querySelector('.modal__dialog');
         previousModal.style.display = 'none';
