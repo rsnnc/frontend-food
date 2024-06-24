@@ -261,4 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
             previousModal.style.display = 'block';
         }, 5000);
     }
+    fetch('db.json')
+    .then(data => data.json())
+    .then(result => console.log(result));
 })
