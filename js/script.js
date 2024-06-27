@@ -84,6 +84,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return num;
         }
     }
+    function deleteZero(num) {
+        if (num >= 0 && num < 10) {
+            return num % 10;
+        } else {
+            return num;
+        }
+    }
     function setClock(endtime) {
         const timer = document.querySelector('.timer'),
               days = timer.querySelector('#days'),
@@ -146,6 +153,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('scroll', openModalByScroll);
 
     // cards specifications by using classes
+    const getResources = (url) => {
+        const res = axios.get(url)
+        return res;
+    } 
 
     class cardList {
         constructor(src, alt, title, descr, price, parent, ...classes) {
@@ -185,10 +196,12 @@ document.addEventListener('DOMContentLoaded', () => {
             this.parent.append(divElement);
         }   
     }
+    getResources('http://localhost:3000/menu').then(data => {
+        data.data.forEach(({img, altimg, title, descr, price, parent}) => {
+            new cardList(img, altimg, title, descr, price, parent).render();
+        })
+    })
 
-    new cardList('img/tabs/post.jpg', 'post', 'Меню "Постное"', 'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков. ', 10, '.menu .container', 'menu__item', 'big').render();
-    new cardList('img/tabs/post.jpg', 'post', 'Меню "Постное"', 'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков. ', 10, '.menu .container', 'menu__item').render();
-    new cardList('img/tabs/post.jpg', 'post', 'Меню "Постное"', 'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков. ', 10, '.menu .container', 'menu__item').render();
 
     // forms
 
@@ -200,10 +213,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     forms.forEach(item => {
-        postData(item);
+        bindPostData(item);
     })
 
-    function postData(form) {
+    const postData = async (url, data) => {
+        const res = await fetch(url, {
+            method: 'POST',
+            body: data,
+            headers: {
+                'Content-type': 'application/json'
+            }
+        })
+        return await res.json();
+    }
+
+    function bindPostData(form) {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
         
@@ -216,18 +240,9 @@ document.addEventListener('DOMContentLoaded', () => {
             form.insertAdjacentElement('afterend', statusMessage);
 
             const formData = new FormData(form);
-            const object = {};
-            formData.forEach(function(value, key) {
-                object[key] = value;
-            })
+            const json = JSON.stringify(Object.fromEntries(formData.entries()))
 
-            fetch('server1.php', {
-                method: 'POST',
-                body: JSON.stringify(object),
-                headers: {
-                    'Content-type': 'application/json'
-                }
-            }).then(data => data.text())
+            postData('http://localhost:3000/requests', json)
             .then(data => {
                 console.log(data);
                 showThanksModal(message.success);
@@ -261,7 +276,212 @@ document.addEventListener('DOMContentLoaded', () => {
             previousModal.style.display = 'block';
         }, 5000);
     }
-    fetch('db.json')
-    .then(data => data.json())
-    .then(result => console.log(result));
+
+
+    // SLIDER
+    const arrows = document.querySelector('.offer__slider-counter'),
+          currentSliderIndex = document.querySelector('#current'),
+          offerImg = document.querySelector('[data-offer__img]'),
+          sliderImages = ['img/slider/pepper.jpg', 'img/slider/olive-oil.jpg', 'img/slider/paprika.jpg', 'img/slider/paprika.jpg'],
+          totalSliderIndex = document.querySelector('#total'),
+          slides = document.querySelectorAll('.offer__slide'),
+          sliderWrapper = document.querySelector('.offer__slider-wrapper'),
+          sliderInner = document.querySelector('.offer__slider-inner'),
+          width = window.getComputedStyle(slides[0]).width,
+          offerSlide = document.querySelector('.offer__slider'),
+          listOfDots = document.createElement('ul');
+
+    let offset = 0
+    sliderInner.style.width = 100 * slides.length + '%';
+    sliderInner.style.display = 'flex';
+    sliderInner.style.transition = '0.5s all'
+    
+    sliderWrapper.style.overflow = 'hidden';
+
+    slides.forEach(slide => {
+        slide.style.width = width;
+    })
+
+    offerSlide.style.position = 'relative';
+    listOfDots.classList.add('carousel-indicators');
+    for (let i = 0; i < slides.length; i++) {
+        listOfDots.innerHTML += `
+            <li class="dot"></li>
+        `
+    }
+    
+
+    offerSlide.append(listOfDots);
+    const listDots = document.querySelectorAll('.dot');
+    listDots[0].classList.add('dot-active'); 
+
+
+    function showSlide(index, offset) {
+        arrows.addEventListener('click', (e) => {
+            if (e.target.className === 'offer__slider-prev') {   
+                listDots[index-1].classList.remove('dot-active');
+                if (index == 1) {
+                    offset = parseInt(window.getComputedStyle(sliderInner).width) - parseInt(width);
+                    index = deleteZero(totalSliderIndex.textContent);
+                    return applyChangesToSlider(index, offset);
+                }
+                offset -= parseInt(width);
+                --index;
+                return applyChangesToSlider(index, offset); 
+            } else if (e.target.className === 'offer__slider-next') {
+                listDots[index-1].classList.remove('dot-active');
+                if (index == deleteZero(totalSliderIndex.textContent)) {
+                    offset = 0
+                    index = 1;
+                    return applyChangesToSlider(index, offset)
+                }
+                offset += parseInt(width);
+                ++index;
+                return applyChangesToSlider(index, offset); 
+            }
+        })
+        
+        function createDotList() {
+
+            listDots.forEach((item, i) => {
+                item.addEventListener('click', () => {
+                    listDots[i].classList.remove('dot-active');
+                    applyChangesToSlider(++i, parseInt(width) * --i);
+                    index = ++i;
+                    offset = parseInt(width) * --i;
+                })
+
+            })
+        }
+        createDotList();
+    }
+    showSlide(+currentSliderIndex.textContent, 0);
+
+    function applyChangesToSlider(index, off = 0) {
+        sliderInner.style.transform = `translateX(-${off}px)`
+        currentSliderIndex.textContent = getZero(index) + '';
+        listDots[index-1].classList.add('dot-active');
+        return index;
+    }
+
+    //  calculator
+
+    const result = document.querySelector('.calculating__result span');
+
+    let weight, age, height, sex, ratio;
+
+    if (localStorage.getItem('sex')) {
+        sex = localStorage.getItem('sex');
+    } else {
+        sex = 'female';
+        localStorage.setItem('sex', 'female');
+    }
+
+    if (localStorage.getItem('ratio')) {
+        ratio = localStorage.getItem('ratio');
+    } else {
+        ratio = 1.375;
+        localStorage.setItem('ratio', 1.375);
+    }
+    calcTotal();
+    function calcTotal() {
+        if (!localStorage.getItem('sex') || !localStorage.getItem('ratio') || !localStorage.getItem('weight') || !localStorage.getItem('age') || !localStorage.getItem('height')) {
+            localStorage.setItem('result', '____')
+            return;
+        }
+        
+        if (localStorage.getItem('sex') == 'male') {
+            localStorage.setItem('result', Math.round(88.36 + (13.4 * localStorage.getItem('weight')) + (4.8 * localStorage.getItem('height')) - (5.7 * localStorage.getItem('age')) * ratio));
+            result.textContent = localStorage.getItem('result');
+        } else {
+            localStorage.setItem('result', Math.round(447.6 + (9.2 * localStorage.getItem('weight')) + (3.1 * localStorage.getItem('height')) - (4.3 * localStorage.getItem('age')) * ratio));
+            result.textContent = localStorage.getItem('result');
+        }
+    }
+    
+    function getStaticInfo(parentSelector) {
+        const elements = document.querySelectorAll(`${parentSelector} .calculating__choose-item`);
+
+        elements.forEach(item => {
+            item.addEventListener('click', (e) => {
+                if (e.target.getAttribute('data-ratio')) {
+                    ratio = +e.target.getAttribute('data-ratio')
+                    localStorage.setItem('ratio', e.target.getAttribute('data-ratio'));
+                } else if (e.target.getAttribute('id') == 'female' || e.target.getAttribute('id') == 'male') {
+                    sex = e.target.getAttribute('id')
+                    localStorage.setItem('sex', e.target.getAttribute('id'));
+                    
+                } else {
+                    return;
+                }
+
+                // elements.forEach(elem => elem.classList.remove('calculating__choose-item_active'))
+                // e.target.classList.add('calculating__choose-item_active')
+                initLocalSettings(parentSelector);
+                
+                calcTotal();
+            })
+        })
+    }
+
+    function getDynamicInfo(selectorId) {
+        const input = document.querySelector(selectorId);
+        input.style.transition = 'all 1s ease-in'
+        input.addEventListener('input', (e) => {
+            if (input.value.match(/\D/g)) {
+                input.style.border = '1px solid rgb(227, 120, 142)'
+                return;
+            } else {
+                input.style.border = 'none'
+            }
+
+            switch(input.getAttribute('id')) {
+                case 'height':
+                    height = +(input.value.match(/\d/g).join(''));
+                    localStorage.setItem('height', height)
+                    break;
+                case 'weight':
+                    weight = +(input.value.match(/\d/g).join(''));
+                    localStorage.setItem('weight', weight)
+                    break;
+                case 'age':
+                    age = +(input.value.match(/\d/g).join(''));
+                    localStorage.setItem('age', age)
+                    break;
+            
+            }
+            calcTotal();
+        })
+    }
+
+    function initLocalSettings(parentSelector) {
+        const elements = document.querySelectorAll(`${parentSelector} .calculating__choose-item`);
+        console.log(elements);
+        if (elements.length == 2) {
+            elements.forEach(item => {
+                if (item.getAttribute('id') == localStorage.getItem('sex')) {
+                    item.classList.add('calculating__choose-item_active')
+                } else {
+                    item.classList.remove('calculating__choose-item_active')
+                }})
+        } else {
+            elements.forEach(item => {
+                if (item.getAttribute('data-ratio') == localStorage.getItem('ratio')) {
+                    item.classList.add('calculating__choose-item_active')
+                } else {
+                    item.classList.remove('calculating__choose-item_active')
+                }
+            })
+        }
+        result.textContent = localStorage.getItem('result');
+    }
+
+
+    getStaticInfo('#gender');
+    getStaticInfo('.calculating__choose_big');
+    getDynamicInfo('#weight');
+    getDynamicInfo('#age');
+    getDynamicInfo('#height');
+    initLocalSettings('#gender');
+    initLocalSettings('.calculating__choose_big');
 })
